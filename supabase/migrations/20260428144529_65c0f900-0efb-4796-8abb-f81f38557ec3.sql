@@ -245,6 +245,11 @@ CREATE POLICY "Parties can update subscriptions"
     EXISTS (SELECT 1 FROM public.farmers f WHERE f.id = farmer_id AND f.user_id = auth.uid())
     OR EXISTS (SELECT 1 FROM public.restaurants r WHERE r.id = restaurant_id AND r.user_id = auth.uid())
   );
+CREATE POLICY "Parties can delete subscriptions"
+  ON public.subscriptions FOR DELETE TO authenticated USING (
+    EXISTS (SELECT 1 FROM public.farmers f WHERE f.id = farmer_id AND f.user_id = auth.uid())
+    OR EXISTS (SELECT 1 FROM public.restaurants r WHERE r.id = restaurant_id AND r.user_id = auth.uid())
+  );
 CREATE TRIGGER trg_subscriptions_updated BEFORE UPDATE ON public.subscriptions
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 

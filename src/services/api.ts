@@ -170,6 +170,11 @@ export async function updateSubscriptionStatus(id: string, status: SubscriptionS
   if (error) throw error;
 }
 
+export async function deleteSubscription(id: string) {
+  const { error } = await supabase.from("subscriptions").delete().eq("id", id);
+  if (error) throw error;
+}
+
 // ---------- Orders ----------
 export async function listUpcomingOrders(opts: { farmerId?: string; restaurantId?: string }) {
   // get subscriptions for the user, then their orders

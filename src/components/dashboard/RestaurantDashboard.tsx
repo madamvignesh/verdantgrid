@@ -18,6 +18,7 @@ import {
   createRequest,
   createSubscription,
   deleteRequest,
+  deleteSubscription,
   getRestaurantByUser,
   listCrops,
   listMyRequests,
@@ -128,6 +129,16 @@ export const RestaurantDashboard = () => {
     await deleteRequest(id);
     toast({ title: "Request removed" });
     refresh();
+  };
+
+  const removeSubscription = async (id: string) => {
+    try {
+      await deleteSubscription(id);
+      toast({ title: "Subscription cancelled", description: "All future deliveries have been removed." });
+      refresh();
+    } catch (err: any) {
+      toast({ title: "Failed to cancel subscription", description: err.message, variant: "destructive" });
+    }
   };
 
   const markDelivered = async (id: string) => {
@@ -293,7 +304,12 @@ export const RestaurantDashboard = () => {
                       <h3 className="font-display text-lg font-bold">{s.crops?.name}</h3>
                       <p className="text-sm text-muted-foreground">From {s.farmers?.profiles?.full_name || "Farmer"}</p>
                     </div>
-                    <Badge>{s.status}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge>{s.status}</Badge>
+                      <Button size="icon" variant="ghost" onClick={() => removeSubscription(s.id)} aria-label="Cancel Subscription">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </div>
                   <p className="text-sm mt-3 text-muted-foreground">
                     {s.quantity} {s.crops?.weight_type} · {s.frequency} · ${Number(s.agreed_price).toFixed(2)} per unit
