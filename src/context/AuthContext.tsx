@@ -28,7 +28,7 @@ type AuthCtx = {
     farm_capacity?: string;
     restaurant_type?: string;
   }) => Promise<{ ok: boolean; error?: string }>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (role?: Role, city?: string, phone?: string, extra?: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 };
@@ -42,10 +42,49 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const loadProfile = async (uid: string, email: string) => {
-    const [{ data: prof }, { data: roleRow }] = await Promise.all([
+    let [{ data: prof }, { data: roleRow }] = await Promise.all([
       supabase.from("profiles").select("user_id, full_name, city").eq("user_id", uid).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", uid).maybeSingle(),
     ]);
+
+    const pendingRole = localStorage.getItem("pending_oauth_role");
+    if (pendingRole && (pendingRole === "farmer" || pendingRole === "restaurant")) {
+      const pendingCity = localStorage.getItem("pending_oauth_city");
+      const pendingPhone = localStorage.getItem("pending_oauth_phone");
+      const pendingExtra = localStorage.getItem("pending_oauth_extra");
+
+      localStorage.removeItem("pending_oauth_role");
+      localStorage.removeItem("pending_oauth_city");
+      localStorage.removeItem("pending_oauth_phone");
+      localStorage.removeItem("pending_oauth_extra");
+
+      // Only perform post-oauth signup update if the user has no role in DB yet
+      if (!roleRow?.role) {
+        try {
+          const { error: rpcErr } = await supabase.rpc("setup_user_profile", {
+            chosen_role: pendingRole,
+            user_city: pendingCity || "",
+            user_phone: pendingPhone || "",
+            user_extra: pendingExtra || "",
+          });
+          
+          if (rpcErr) {
+            console.error("Error setting up user role:", rpcErr);
+          } else {
+            // Re-fetch role and profile
+            const [{ data: newRoleRow }, { data: newProf }] = await Promise.all([
+              supabase.from("user_roles").select("role").eq("user_id", uid).maybeSingle(),
+              supabase.from("profiles").select("user_id, full_name, city").eq("user_id", uid).maybeSingle(),
+            ]);
+            roleRow = newRoleRow;
+            prof = newProf;
+          }
+        } catch (err) {
+          console.error("Failed to run post-oauth signup update:", err);
+        }
+      }
+    }
+
     if (prof) {
       setProfile({
         user_id: uid,
@@ -110,7 +149,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { ok: true };
   };
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (role?: Role, city?: string, phone?: string, extra?: string) => {
+    if (role) {
+      localStorage.setItem("pending_oauth_role", role);
+      if (city) localStorage.setItem("pending_oauth_city", city);
+      if (phone) localStorage.setItem("pending_oauth_phone", phone);
+      if (extra) localStorage.setItem("pending_oauth_extra", extra);
+    } else {
+      localStorage.removeItem("pending_oauth_role");
+      localStorage.removeItem("pending_oauth_city");
+      localStorage.removeItem("pending_oauth_phone");
+      localStorage.removeItem("pending_oauth_extra");
+    }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {

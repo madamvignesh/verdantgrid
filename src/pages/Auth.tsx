@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { Leaf, Moon, Sun } from "lucide-react";
+import { Leaf, Moon, Sun, Utensils } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth, type Role } from "@/context/AuthContext";
 import { useTheme } from "@/components/ThemeProvider";
 import { toast } from "@/hooks/use-toast";
@@ -86,6 +85,25 @@ const Auth = () => {
         </div>
 
         <div className="rounded-3xl border border-border bg-card/80 backdrop-blur shadow-elegant p-8">
+          <div className="grid grid-cols-2 gap-2 mb-6">
+            <button
+              type="button"
+              onClick={() => setRole("restaurant")}
+              className={`py-3 px-4 rounded-xl border text-sm font-semibold transition-all flex flex-col items-center gap-1.5 ${role === "restaurant" ? "bg-primary/10 border-primary text-primary" : "bg-card border-border text-muted-foreground hover:text-foreground"}`}
+            >
+              <Utensils className="h-5 w-5" />
+              <span>Restaurant / Kitchen</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setRole("farmer")}
+              className={`py-3 px-4 rounded-xl border text-sm font-semibold transition-all flex flex-col items-center gap-1.5 ${role === "farmer" ? "bg-primary/10 border-primary text-primary" : "bg-card border-border text-muted-foreground hover:text-foreground"}`}
+            >
+              <Leaf className="h-5 w-5" />
+              <span>Urban Farmer</span>
+            </button>
+          </div>
+
           <div className="flex p-1 bg-muted rounded-xl mb-6">
             <button
               type="button"
@@ -99,18 +117,21 @@ const Auth = () => {
             >Sign up</button>
           </div>
 
-          <h1 className="font-display text-2xl font-bold">
+          <h1 className="font-display text-2xl font-bold text-center sm:text-left">
             {mode === "login" ? "Welcome back" : "Create your account"}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {mode === "login" ? "Log in to manage your orders and crops." : "Join the local food network in seconds."}
+          <p className="text-sm text-muted-foreground mt-1 text-center sm:text-left">
+            {mode === "login" 
+              ? `Log in to manage your ${role === "farmer" ? "listings and orders" : "orders and requests"}.` 
+              : "Join the local food network in seconds."
+            }
           </p>
 
           <Button
             type="button"
             variant="outline"
             className="w-full mt-6"
-            onClick={() => signInWithGoogle()}
+            onClick={() => signInWithGoogle(role, city.trim(), phone.trim(), extra.trim())}
             disabled={busy}
           >
             Continue with Google
@@ -136,16 +157,6 @@ const Auth = () => {
             </div>
             {mode === "signup" && (
               <>
-                <div className="space-y-1.5">
-                  <Label>I am a</Label>
-                  <Select value={role} onValueChange={(v) => setRole(v as Role)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="restaurant">Restaurant / Kitchen</SelectItem>
-                      <SelectItem value="farmer">Urban Farmer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="city">City</Label>
