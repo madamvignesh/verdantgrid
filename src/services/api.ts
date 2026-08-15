@@ -194,3 +194,21 @@ export async function updateOrderStatus(id: string, status: OrderStatus) {
   const { error } = await supabase.from("orders").update({ status }).eq("id", id);
   if (error) throw error;
 }
+
+// Keep Supabase database active
+export async function keepDatabaseAlive() {
+  const { error } = await supabase
+    .from("crops")
+    .select("id")
+    .limit(1);
+
+  if (error) {
+    console.error("Supabase keep-alive failed:", error);
+    throw error;
+  }
+
+  return {
+    success: true,
+    message: "Supabase database is active",
+  };
+}
